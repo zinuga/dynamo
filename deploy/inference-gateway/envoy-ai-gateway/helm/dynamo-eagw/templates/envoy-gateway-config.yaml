@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.envoyGateway.patchEnabled }}
+# Patch the EnvoyGateway singleton so that:
+#   1. Envoy Gateway enables the BackendExtension API (required for InferencePool).
+#   2. Envoy Gateway's control plane talks to the Envoy AI Gateway extension server,
+#      which translates InferencePool resources into xDS cluster + ExtProc filter config.
+#
+# If you manage EnvoyGateway elsewhere, set envoyGateway.patchEnabled: false and
+# apply the equivalent configuration manually.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyGateway
+metadata:
+  name: envoy-gateway
+  namespace: {{ .Values.envoyGateway.namespace }}
+spec:
+  extensionAPIs:
+    # Required: enables Envoy Gateway to resolve non-Service backendRefs such as InferencePool.
+    enableBackendExtension: true
+  extensionManager:
+    # Tell Envoy Gateway which CRD kinds the extension server handles.
+    resources:
+      - group: inference.networking.k8s.io
+        version: v1
+        kind: InferencePool
+    # Address of the Envoy AI Gateway extension server.
+    service:
+      fqdn:
+        hostname: ai-gateway-controller.{{ .Values.envoyGateway.eagwNamespace }}.svc.cluster.local
+        port: {{ .Values.envoyGateway.extensionServerPort }}
+    # failOpen: false means gateway rejects requests when the extension server is unreachable.
+    # Set to true only for non-production / degraded-mode tolerance.
+    failOpen: false
+{{- end }}

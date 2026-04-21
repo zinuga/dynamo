@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- $gatewayNs := include "dynamo-eagw.gatewayNamespace" . }}
+# AIGatewayRoute routes OpenAI-compatible inference requests to the Dynamo InferencePool.
+# Envoy AI Gateway matches the x-ai-eg-model header (injected from the "model" field
+# in the request body) to route to the correct backend.
+apiVersion: aigateway.envoyproxy.io/v1beta1
+kind: AIGatewayRoute
+metadata:
+  name: {{ .Values.model.shortName }}-route
+  namespace: {{ .Release.Namespace }}
+spec:
+  # Declare the request/response schema so Envoy AI Gateway can extract the model
+  # name, count tokens, and apply rate limits.
+  schema:
+    name: OpenAI
+
+  targetRefs:
+    - name: {{ .Values.aiGatewayRoute.gatewayName }}
+      kind: Gateway
+      group: gateway.networking.k8s.io
+      namespace: {{ $gatewayNs }}
+
+  rules:
+    # Primary rule: route requests for this model to the Dynamo InferencePool.
+    - matches:
+        - headers:
+            - type: Exact
+              name: x-ai-eg-model
+              value: {{ .Values.model.identifier }}
+      backendRefs:
+        - group: inference.networking.k8s.io
+          kind: InferencePool
+          name: {{ .Values.model.shortName }}-pool
+          namespace: {{ .Release.Namespace }}
+      timeouts:
+        request: {{ .Values.aiGatewayRoute.timeout }}
+
+{{- if .Values.aiGatewayRoute.fallback.enabled }}
+    # Optional fallback rule: route a different model identifier to an external provider.
+    # Useful for A/B testing or capacity overflow scenarios.
+    - matches:
+        - headers:
+            - type: Exact
+              name: x-ai-eg-model
+              value: {{ .Values.aiGatewayRoute.fallback.modelName }}
+      backendRefs:
+        - name: {{ .Values.aiGatewayRoute.fallback.backendName }}
+          kind: AIServiceBackend
+          group: aigateway.envoyproxy.io
+          namespace: {{ .Release.Namespace }}
+      timeouts:
+        request: {{ .Values.aiGatewayRoute.timeout }}
+{{- end }}

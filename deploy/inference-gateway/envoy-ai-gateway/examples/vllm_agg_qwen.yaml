@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Values override for deploying Qwen3-0.6B in aggregated (non-disaggregated) mode
+# behind Envoy AI Gateway with KV-aware routing.
+#
+# Usage:
+#   helm upgrade --install qwen \
+#     deploy/inference-gateway/envoy-ai-gateway/helm/dynamo-eagw \
+#     --namespace my-model \
+#     --create-namespace \
+#     --set-string extension.image=$EPP_IMAGE \
+#     -f deploy/inference-gateway/envoy-ai-gateway/examples/vllm_agg_qwen.yaml
+
+dynamoGraphDeploymentName: "vllm-agg"
+
+model:
+  identifier: "Qwen/Qwen3-0.6B"
+  shortName: "qwen"
+
+aiGatewayRoute:
+  gatewayName: "inference-gateway"
+  # Leave gatewayNamespace empty to use the release namespace
+  gatewayNamespace: ""
+
+platformReleaseName: dynamo-platform
+platformNamespace: "my-model"

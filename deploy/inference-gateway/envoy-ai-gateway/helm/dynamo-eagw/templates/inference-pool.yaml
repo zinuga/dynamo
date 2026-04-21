@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# InferencePool selects the set of Dynamo Frontend sidecar pods that serve this model,
+# and wires them to the Dynamo EPP for KV-aware endpoint selection.
+apiVersion: inference.networking.k8s.io/v1
+kind: InferencePool
+metadata:
+  name: {{ .Values.model.shortName }}-pool
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    # Envoy AI Gateway must buffer the full request body so the EPP can tokenize
+    # the prompt and compute KV cache overlap scores.
+    aigateway.envoyproxy.io/processing-body-mode: "Buffered"
+spec:
+  targetPorts:
+    - number: {{ .Values.inferencePool.port }}
+  # Select Dynamo Frontend pods for this DGD namespace.
+  selector:
+    matchLabels:
+      nvidia.com/dynamo-component: Frontend
+      nvidia.com/dynamo-namespace: {{ include "dynamo-eagw.dynamoNamespace" . }}
+  # Point to the EPP service (gRPC, h2c).
+  endpointPickerRef:
+    group: ""
+    kind: Service
+    name: {{ .Values.model.shortName }}-epp
+    port:
+      number: 9002

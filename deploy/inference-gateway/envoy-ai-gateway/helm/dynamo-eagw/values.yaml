@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Name of the DynamoGraphDeployment (DGD) that backs this gateway integration.
+# The Dynamo namespace is derived as "<release-namespace>-<dynamoGraphDeploymentName>".
+dynamoGraphDeploymentName: "vllm-agg"
+
+# Model configuration
+model:
+  # Full model identifier used in AIGatewayRoute header match (x-ai-eg-model).
+  # Clients must send: -H "x-ai-eg-model: <identifier>"
+  identifier: "Qwen/Qwen3-0.6B"
+  # Short name used to generate Kubernetes resource names (e.g., "qwen" → "qwen-pool", "qwen-epp")
+  shortName: "qwen"
+
+# InferencePool — targets Dynamo Frontend sidecar pods
+inferencePool:
+  # Port on which Dynamo Frontend sidecars listen
+  port: 8000
+
+# Envoy AI Gateway route configuration
+aiGatewayRoute:
+  # Name of the Gateway resource to attach this route to
+  gatewayName: "inference-gateway"
+  # Namespace where the Gateway resource lives; defaults to the release namespace if empty
+  gatewayNamespace: ""
+  # Timeout for inference requests (LLMs can be slow)
+  timeout: "300s"
+
+  # Optional fallback to an external provider (e.g., OpenAI) when the model is not
+  # served locally. Set enabled: true and configure the fields below to activate.
+  fallback:
+    enabled: false
+    # Model name clients use to reach the external provider
+    modelName: "gpt-4o-mini"
+    # Name of an AIServiceBackend resource in this namespace
+    backendName: "openai-backend"
+
+# Envoy AI Gateway control plane configuration.
+# The chart patches the EnvoyGateway singleton in envoy-gateway-system so that
+# Envoy Gateway knows about the EAGW extension server and can handle InferencePool.
+envoyGateway:
+  # Namespace where Envoy Gateway is installed
+  namespace: "envoy-gateway-system"
+  # Namespace where Envoy AI Gateway controller is installed
+  eagwNamespace: "envoy-ai-gateway-system"
+  # Port of the Envoy AI Gateway extension server
+  extensionServerPort: 5005
+  # Set to false to skip rendering the EnvoyGateway patch (if already configured elsewhere)
+  patchEnabled: true
+
+# EPP (Endpoint Picker Plugin) configuration
+epp:
+  imagePullPolicy: IfNotPresent
+  # Additional environment variables injected into the EPP container
+  extraEnv: []
+  # Override the full args list if needed; when empty the chart renders sensible defaults
+  argsOverride: []
+
+  # Enable KV-aware routing via the Dynamo EPP image (requires useDynamo: true)
+  useDynamo: true
+
+  configFile: "/etc/epp/epp-config-dynamo.yaml"
+  dynamo:
+    # Use etcd for discovery instead of Kubernetes CRDs (default: false)
+    useEtcd: false
+
+# EPP container image (required — no default)
+# Set via: --set-string extension.image=$EPP_IMAGE
+extension:
+  image: ""
+
+# Platform release name and namespace (used to derive NATS/etcd addresses)
+platformReleaseName: dynamo-platform
+platformNamespace: "my-model"
+
+imagePullSecrets:
+  - docker-imagepullsecret

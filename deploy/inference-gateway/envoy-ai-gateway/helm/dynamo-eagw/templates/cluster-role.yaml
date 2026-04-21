@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "dynamo-eagw.fullname" . }}-pod-read
+rules:
+# Gateway API Inference Extension (experimental API)
+- apiGroups: ["inference.networking.x-k8s.io"]
+  resources: ["inferencepools", "inferenceobjectives", "inferencemodelrewrites"]
+  verbs: ["get", "watch", "list"]
+# Gateway API Inference Extension (stable API)
+- apiGroups: ["inference.networking.k8s.io"]
+  resources: ["inferencepools"]
+  verbs: ["get", "watch", "list"]
+# Pod discovery
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+# Dynamo k8s service discovery — EndpointSlices
+- apiGroups: ["discovery.k8s.io"]
+  resources: ["endpointslices"]
+  verbs: ["get", "list", "watch"]
+# Dynamo k8s service discovery — worker metadata CRDs
+- apiGroups: ["nvidia.com"]
+  resources: ["dynamoworkermetadatas"]
+  verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+# Token review / SAR for webhook auth
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+- apiGroups: ["authorization.k8s.io"]
+  resources: ["subjectaccessreviews"]
+  verbs: ["create"]

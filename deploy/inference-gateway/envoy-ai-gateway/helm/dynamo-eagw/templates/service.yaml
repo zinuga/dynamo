@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# ClusterIP service exposing the EPP gRPC endpoint.
+# InferencePool.endpointPickerRef points at this service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.model.shortName }}-epp
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: {{ .Values.model.shortName }}-epp
+  ports:
+    - protocol: TCP
+      port: 9002
+      targetPort: 9002
+      appProtocol: http2
+  type: ClusterIP

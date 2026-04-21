@@ -1,0 +1,26 @@
+Dynamo + Envoy AI Gateway deployment complete.
+
+Resources created:
+  - InferencePool:   {{ .Values.model.shortName }}-pool  (namespace: {{ .Release.Namespace }})
+  - AIGatewayRoute:  {{ .Values.model.shortName }}-route  (gateway: {{ .Values.aiGatewayRoute.gatewayName }})
+  - EPP Deployment:  {{ .Values.model.shortName }}-epp
+  - EPP Service:     {{ .Values.model.shortName }}-epp:9002
+{{- if .Values.envoyGateway.patchEnabled }}
+  - EnvoyGateway:    envoy-gateway  (namespace: {{ .Values.envoyGateway.namespace }})
+{{- end }}
+
+To send a test request (replace <GATEWAY_IP> with the Gateway's external address):
+
+  curl http://<GATEWAY_IP>/v1/chat/completions \
+    -H "Content-Type: application/json" \
+    -H "x-ai-eg-model: {{ .Values.model.identifier }}" \
+    -d '{
+      "model": "{{ .Values.model.identifier }}",
+      "messages": [{"role": "user", "content": "Hello"}],
+      "stream": false
+    }'
+
+Watch EPP logs:
+  kubectl logs -n {{ .Release.Namespace }} -l app={{ .Values.model.shortName }}-epp -f
+
+Full documentation: docs/kubernetes/envoy-ai-gateway.md

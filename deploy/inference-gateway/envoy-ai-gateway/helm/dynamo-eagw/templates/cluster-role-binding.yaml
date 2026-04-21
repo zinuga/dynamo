@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "dynamo-eagw.fullname" . }}-pod-read-binding
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "dynamo-eagw.fullname" . }}-pod-read
+  apiGroup: rbac.authorization.k8s.io

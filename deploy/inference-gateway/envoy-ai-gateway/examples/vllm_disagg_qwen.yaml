@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Values override for deploying Qwen3-0.6B in disaggregated (prefill/decode split) mode
+# behind Envoy AI Gateway with KV-aware routing.
+#
+# In disaggregated mode the Dynamo EPP runs separate prefill and decode scoring passes.
+# The EPP selects the prefill worker (KV overlap) and the decode worker (queue depth)
+# and injects x-worker-instance-id + x-prefill-instance-id headers into the request.
+#
+# Usage:
+#   helm upgrade --install qwen-disagg \
+#     deploy/inference-gateway/envoy-ai-gateway/helm/dynamo-eagw \
+#     --namespace my-model \
+#     --create-namespace \
+#     --set-string extension.image=$EPP_IMAGE \
+#     -f deploy/inference-gateway/envoy-ai-gateway/examples/vllm_disagg_qwen.yaml
+
+dynamoGraphDeploymentName: "vllm-disagg"
+
+model:
+  identifier: "Qwen/Qwen3-0.6B"
+  shortName: "qwen-disagg"
+
+aiGatewayRoute:
+  gatewayName: "inference-gateway"
+  gatewayNamespace: ""
+
+epp:
+  dynamo:
+    useEtcd: false
+  extraEnv:
+    - name: DYN_ENFORCE_DISAGG
+      value: "true"
+
+platformReleaseName: dynamo-platform
+platformNamespace: "my-model"
