@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "dynamo-ext-proc"
+description = "Envoy ext_proc service that provides KV-cache-aware routing for Dynamo"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "dynamo-ext-proc"
+path = "src/main.rs"
+
+[lib]
+name = "dynamo_ext_proc"
+path = "src/lib.rs"
+
+[features]
+default = []
+
+[dependencies]
+dynamo-kv-router = { workspace = true, features = ["metrics"] }
+
+# gRPC
+# Pin to the same versions used by lib/llm so the prost types are compatible.
+tonic      = { version = "0.13.1" }
+prost      = { version = "0.13.5" }
+tokio      = { workspace = true, features = ["full"] }
+tokio-stream = { version = "0.1", features = ["net"] }
+
+# Serialisation / parsing
+serde      = { workspace = true }
+serde_json = { workspace = true }
+
+# Utilities
+anyhow        = { workspace = true }
+async-trait   = { workspace = true }
+clap          = { version = "4", features = ["derive", "env"] }
+dashmap       = { workspace = true }
+tracing       = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+[build-dependencies]
+tonic-build = { version = "0.13.1" }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros", "time", "test-util"] }
