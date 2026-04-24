@@ -70,6 +70,32 @@ epp:
 extension:
   image: ""
 
+# Rust ext_proc service (dynamo-ext-proc) configuration.
+# When enabled, the Rust ext_proc runs as a sidecar in the EPP pod and Envoy
+# is configured to call it via an EnvoyExtensionPolicy for KV-cache-aware routing.
+# This replaces the CGO/FFI path used by the Go EPP plugins with a native Rust
+# gRPC service that directly embeds the KvRouter indexer.
+extProc:
+  # Set to true to deploy the Rust ext_proc sidecar alongside the EPP.
+  enabled: false
+  # Container image for dynamo-ext-proc.
+  # Build from: lib/ext-proc/ in the Dynamo repo.
+  image: ""
+  imagePullPolicy: IfNotPresent
+  # Port the ext_proc gRPC service listens on inside the pod.
+  port: 9003
+  # KV cache block size — must match the worker configuration.
+  blockSize: 16
+  # Number of event-worker threads for the internal ThreadPoolIndexer.
+  eventWorkers: 4
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "2000m"
+      memory: "2Gi"
+
 # Platform release name and namespace (used to derive NATS/etcd addresses)
 platformReleaseName: dynamo-platform
 platformNamespace: "my-model"

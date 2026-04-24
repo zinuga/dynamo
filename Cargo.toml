@@ -21,6 +21,7 @@ members = [
     "lib/bench",
     "lib/bindings/c",
     "lib/bindings/python/codegen",
+    "lib/ext-proc",
 ]
 resolver = "3"
 

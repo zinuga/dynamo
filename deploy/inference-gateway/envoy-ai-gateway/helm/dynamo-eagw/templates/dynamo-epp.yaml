@@ -133,6 +133,37 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
 
+      {{- if .Values.extProc.enabled }}
+      - name: ext-proc
+        image: "{{ required "extProc.image is required when extProc.enabled=true" .Values.extProc.image }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.extProc.imagePullPolicy }}
+        env:
+          - name: EXT_PROC_LISTEN_ADDR
+            value: "[::]:{{ .Values.extProc.port }}"
+          - name: EXT_PROC_BLOCK_SIZE
+            value: {{ .Values.extProc.blockSize | quote }}
+          - name: EXT_PROC_EVENT_WORKERS
+            value: {{ .Values.extProc.eventWorkers | quote }}
+          - name: RUST_LOG
+            value: "info,dynamo_ext_proc=debug"
+        ports:
+          - name: ext-proc-grpc
+            containerPort: {{ .Values.extProc.port }}
+            protocol: TCP
+        resources:
+          {{- toYaml .Values.extProc.resources | nindent 10 }}
+        livenessProbe:
+          grpc:
+            port: {{ .Values.extProc.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          grpc:
+            port: {{ .Values.extProc.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      {{- end }}
+
       volumes:
         - name: hf-cache
           emptyDir: {}
